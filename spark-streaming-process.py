@@ -11,10 +11,13 @@ from pyspark.streaming import StreamingContext
 from pyspark.streaming.kafka import KafkaUtils
 from uuid import uuid1
 import json
-
+import time
+# import datetime
+from dateutil import tz
+from datetime import datetime, timezone, date
 """
 spark-submit --packages anguenot:pyspark-cassandra:0.6.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0\ 
- test.py 10.88.113.111:9092 log 
+ spark-streaming-process.py 10.88.113.111:9092 log 
 """
 
 
@@ -24,6 +27,30 @@ def getValue(x,key,defVal):
     if x[key] is None:
         return defVal
     return x[key]
+
+def getTimeStamp():
+    
+    # year=datetime.utcnow().year
+    year=datetime.now().year
+    # month=datetime.utcnow().month
+    month=datetime.now().month
+    # day=datetime.utcnow().day
+    day=datetime.now().day
+    # utc_zone = tz.gettz('UTC')
+    # result = datetime.datetime(2016, 11, 6, 4, tzinfo=datetime.timezone.utc)
+    # return datetime.date()
+    # return date(2017,12,8).timetuple()
+    # return date.today()
+    # return datetime(2017,12,8,0,0,0)
+    # datetime.datetime.
+    # return datetime(year,month,day,tzinfo=timezone.utc)
+    result = int(time.mktime(time.strptime('%s-%s-%s' %(year,month,day), '%Y-%m-%d'))) - time.timezone
+    # result = int(time.mktime(time.strptime('%s-%s-%s' %(year,month,day), '%Y-%m-%d')))
+    # print(result)
+    # return str(year)+'-'+str(month)+'-'+str(day)
+    # return datetime.datetime
+    # return datetime.utcnow()
+    return result
 
 if __name__ == '__main__':
 
@@ -38,10 +65,10 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 2)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
-    # kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
     ob = parsed.map(lambda x: 
         { 
+            "date": getTimeStamp(),
             "userid": getValue(x,'userid','-1'),
             "fsa": x["clientID"],
             "fsid": x["_fsid"],
@@ -56,20 +83,8 @@ if __name__ == '__main__':
             "config_java": x['javaEnabled'],
             # "dma_code": getValue(x,'dma_code','')
         })
-
-    print('-'*30)
-    # if ob.count() !=0:
-    #     print(ob['userid'])
-    ob.pprint('userid')
-    # ob.saveToCassandra("test","fsa_log_visit")
-    # parsed.pprint()
-    # text_counts.pprint()
-    print('-'*30)
-
-    # movie = sc.cassandraTable("db","user_model").toDF()
-    # print(movie.collect())
-    # x = movie[movie.movie_id == "tt2456504"].collect()
-    # print(x)
+    ob.pprint()
+    ob.saveToCassandra("test","fsa_log_visit")
     ssc.start()
     ssc.awaitTermination()
     pass

@@ -80,6 +80,7 @@ def create_fsa_log_visit():
             userid text,  
             fsa text, 
             fsid text,
+            date int,
             idsite text,
             location_ipv4 text,
             location_ipv6 inet,
@@ -95,7 +96,7 @@ def create_fsa_log_visit():
             config_viewport_size text,
             config_java text,
             referal_xxx text,
-            PRIMARY KEY(userid, fsa, fsid)
+            PRIMARY KEY(date,userid, fsa, fsid)
         )
         """)
 
@@ -407,6 +408,20 @@ def insert_data_fsa_log_visit(source_path):
         log.info("+--------------------------------------------------------+")
     pass
 
+def create_new_user_daily_report(): 
+    session = getSession(KEYSPACE) 
+    log.info("+-----------Get session successfully-----------+") 
+    session.execute("DROP TABLE IF EXISTS new_user_daily_report") 
+    # log.info("+----------------------------------------------+") 
+    # # log.info("+-----DROPED TABLE fsa_user successfully-----+")
+    #  # log.info("+----------------------------------------------+") 
+    # log.info("+----------------------------------------------+") 
+    # log.info("+---------------creating table-----------------+") log.info("+----------------------------------------------+") 
+    session.execute(""" CREATE TABLE IF NOT EXISTS new_user_daily_report ( Date date, users int, PRIMARY KEY(Date, users) ) """) 
+    log.info("+----------------------------------------------+") 
+    log.info("-------------new_user_daily_report table created successfully--------+") 
+    log.info("+----------------------------------------------+")
+
 def getSession(keySpaceName):
     cluster = Cluster(['10.88.113.74'])
     session = cluster.connect()
@@ -430,21 +445,21 @@ def getSession(keySpaceName):
     return session
     pass
 if __name__ == "__main__":
-    if len(sys.argv) !=4:
-        log.info('+---------------------------------------------------------+')
-        log.info('+----------USAGE: spark-submit example_cassandra ---------+')
-        log.info('+------------------------------<movie input file>---------+')
-        log.info('+------------------------------<cf result file input>-----+')
-        exit(-1)
-    path_input1 = sys.argv[1]
-    path_input2 = sys.argv[2]
-    path_input3 = sys.argv[3]
+    # if len(sys.argv) !=4:
+    #     log.info('+---------------------------------------------------------+')
+    #     log.info('+----------USAGE: spark-submit example_cassandra ---------+')
+    #     log.info('+------------------------------<movie input file>---------+')
+    #     log.info('+------------------------------<cf result file input>-----+')
+    #     exit(-1)
+    # path_input1 = sys.argv[1]
+    # path_input2 = sys.argv[2]
+    # path_input3 = sys.argv[3]
     # create_fsa_user()
     # create_fsa_site()
     # insert_data_fsa_user(path_input1)
     # insert_data_fsa_site(path_input2)
-    create_user_daily()
-    create_draft_user_daily()
+    # create_user_daily()
+    # create_draft_user_daily()
     # create_fsa_log_visit()
     # insert_data_fsa_log_visit(path_input3)
     # create_user_daily()
@@ -453,4 +468,5 @@ if __name__ == "__main__":
     # create_user_daily_report()
     # create_new_user_daily_report()
     # getSession(KEYSPACE)
+    create_new_user_daily_report()
     pass
