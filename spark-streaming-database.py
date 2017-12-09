@@ -219,12 +219,26 @@ def create_user_daily_report():
     log.info("+----------------------------------------------+")
     session.execute("""
         CREATE TABLE IF NOT EXISTS user_daily_report (
-            Date date,
-            users int,
-            PRIMARY KEY(Date)
-        )
+            date bigint PRIMARY KEY,
+            users int
+        ) WITH bloom_filter_fp_chance = 0.01
+            AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+            AND comment = ''
+            AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+            AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+            AND crc_check_chance = 1.0
+            AND dclocal_read_repair_chance = 0.1
+            AND default_time_to_live = 0
+            AND gc_grace_seconds = 864000
+            AND max_index_interval = 2048
+            AND memtable_flush_period_in_ms = 0
+            AND min_index_interval = 128
+            AND read_repair_chance = 0.0
+            AND speculative_retry = '99PERCENTILE';
         """)
-
+            # date text,
+            # users text,
+            # PRIMARY KEY(date)
     log.info("+----------------------------------------------+")
     log.info("-------------user_daily_report table created successfully--------+")
     log.info("+----------------------------------------------+")
@@ -423,7 +437,7 @@ def create_new_user_daily_report():
     log.info("+----------------------------------------------+")
 
 def getSession(keySpaceName):
-    cluster = Cluster(['10.88.113.74'])
+    cluster = Cluster(['127.0.0.1'])
     session = cluster.connect()
     log.info("+------------------------------------------------------+")
     log.info("+-------------------creating keyspace------------------+")
@@ -431,7 +445,8 @@ def getSession(keySpaceName):
     try:
         session.execute("""
             CREATE KEYSPACE %s
-            WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
+            WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '1' }
+            AND durable_writes = true;
             """ % keySpaceName)
         log.info("+--------------------------------------------------+")
         log.info("+---------------keyspace created successfully------+")
@@ -460,7 +475,7 @@ if __name__ == "__main__":
     # insert_data_fsa_site(path_input2)
     # create_user_daily()
     # create_draft_user_daily()
-    # create_fsa_log_visit()
+    create_fsa_log_visit()
     # insert_data_fsa_log_visit(path_input3)
     # create_user_daily()
     # create_fsa_log_link_visit_action()
@@ -468,5 +483,5 @@ if __name__ == "__main__":
     # create_user_daily_report()
     # create_new_user_daily_report()
     # getSession(KEYSPACE)
-    create_new_user_daily_report()
+    # create_new_user_daily_report()
     pass

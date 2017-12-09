@@ -4,7 +4,7 @@ import sys
 import pyspark_cassandra
 from pyspark_cassandra import CassandraSparkContext
 
-from pyspark.sql import SQLContext
+from pyspark.sql import SQLContext, SparkSession
 from pyspark import SparkContext, SparkConf
 from uuid import uuid1
 import json
@@ -43,16 +43,20 @@ if __name__ == '__main__':
         exit(-1)
     conf = SparkConf() \
 	.setAppName("spark-streaming") \
-	.set("spark.cassandra.connection.host", "10.88.113.74")
+	.set("spark.cassandra.connection.host", "localhost")
     sc = CassandraSparkContext(conf=conf)
-    # sql = SQLContext(sc)
-    # table = sc.cassandraTable("test","fsa_log_visit").select("date","userid","fsa","fsid")\
-    #         .filter(lambda x: int(x['date']) == getTimeStamp())
-    table = sc.cassandraTable("test","fsa_log_visit").select("date","userid","fsa","fsid")\
-            .filter(lambda x: int(x['date']) == getTimeStamp())
+    spark = SparkSession(sc)
+    date_temp = getTimeStamp()
+    rdd = sc.cassandraTable("test","fsa_log_visit").select("date","userid","fsa","fsid")\
+            .filter(lambda x: int(x['date']) == date_temp)
+    if rdd.isEmpty() ==False:
+        table = rdd.toDF()
+        table.show(truncate=False)
+        total=table.dropDuplicates(['fsa',"fsid"]).count()
 
-    # sql.registerDataFrameAsTable(table, "fsa_log_visit")
-    
-    print(table.collect())
-    # table.show()
+        result = sc.parallelize([{
+            "date": int(date_temp),
+            "users": int(total)
+        }])
+        result.saveToCassandra('test','user_daily_report')
     pass
