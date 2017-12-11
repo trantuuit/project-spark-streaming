@@ -11,6 +11,7 @@ import json
 import time
 from dateutil import tz
 from datetime import datetime, timezone, date
+
 def getTimeStamp():
     # year=datetime.utcnow().year
     year=datetime.now().year
@@ -31,32 +32,43 @@ def getTimeStamp():
     # print(result)
     # return str(year)+'-'+str(month)+'-'+str(day)
     # return datetime.datetime
-    # return datetime.utcnow()
+    # return datetime.utcnow().date()
     return result
 
 """
-spark-submit --packages anguenot:pyspark-cassandra:0.6.0 spark-process-data.py
+spark-submit --packages anguenot:pyspark-cassandra:0.6.0 spark-calculate-total-new-user.py
 """
 if __name__ == '__main__':
     if len(sys.argv) != 1:
         print("Usage: spark-process-data", file=sys.stderr)
         exit(-1)
     conf = SparkConf() \
-	.setAppName("spark-streaming") \
-	.set("spark.cassandra.connection.host", "localhost")
+	.setAppName("spark-calculate-total-new-user") \
+	.set("spark.cassandra.connection.host", "10.88.113.74")
     sc = CassandraSparkContext(conf=conf)
     spark = SparkSession(sc)
     date_temp = getTimeStamp()
-    rdd = sc.cassandraTable("test","fsa_log_visit").select("date","userid","fsa","fsid")\
-            .filter(lambda x: int(x['date']) == date_temp)
-    if rdd.isEmpty() ==False:
-        table = rdd.toDF()
-        table.show(truncate=False)
-        total=table.dropDuplicates(['fsa',"fsid"]).count()
 
-        result = sc.parallelize([{
-            "date": int(date_temp),
-            "users": int(total)
-        }])
-        result.saveToCassandra('test','user_daily_report')
+    while True:
+        rdd = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")\
+                .filter(lambda x: int(x['m_date']) == date_temp)
+
+        if rdd.isEmpty() == False:
+            table = rdd.toDF()
+            table.show(truncate=False)
+            total=table.dropDuplicates(['fsa',"fsid"]).count()
+
+            result = sc.parallelize([{
+                "bucket":0,
+                "m_date": int(date_temp),
+                "users": int(total)
+            }])
+        else:
+            result = sc.parallelize([{
+                "bucket":0,
+                "m_date": int(date_temp),
+                "users": 0
+            }])
+        result.saveToCassandra('test','draft_user_daily_report')
+        time.sleep(2)
     pass

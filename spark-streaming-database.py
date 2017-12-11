@@ -80,7 +80,7 @@ def create_fsa_log_visit():
             userid text,  
             fsa text, 
             fsid text,
-            date int,
+            m_date int,
             idsite text,
             location_ipv4 text,
             location_ipv6 inet,
@@ -96,7 +96,7 @@ def create_fsa_log_visit():
             config_viewport_size text,
             config_java text,
             referal_xxx text,
-            PRIMARY KEY(date,userid, fsa, fsid)
+            PRIMARY KEY(m_date,userid, fsa, fsid)
         )
         """)
 
@@ -437,7 +437,7 @@ def create_new_user_daily_report():
     log.info("+----------------------------------------------+")
 
 def getSession(keySpaceName):
-    cluster = Cluster(['127.0.0.1'])
+    cluster = Cluster(['10.88.113.74'])
     session = cluster.connect()
     log.info("+------------------------------------------------------+")
     log.info("+-------------------creating keyspace------------------+")

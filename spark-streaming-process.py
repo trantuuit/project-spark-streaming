@@ -16,8 +16,7 @@ import time
 from dateutil import tz
 from datetime import datetime, timezone, date
 """
-spark-submit --packages anguenot:pyspark-cassandra:0.6.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0\ 
- spark-streaming-process.py 10.88.113.111:9092 log 
+spark-submit --packages anguenot:pyspark-cassandra:0.6.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0 spark-streaming-process.py 10.88.113.111:9092 log 
 """
 
 
@@ -49,7 +48,8 @@ def getTimeStamp():
     # print(result)
     # return str(year)+'-'+str(month)+'-'+str(day)
     # return datetime.datetime
-    # return datetime.utcnow()
+    # return datetime.utcnow().date()
+    # return datetime.now().date()
     return result
 
 if __name__ == '__main__':
@@ -65,11 +65,13 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 2)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
+    kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
+    parsed.pprint()
     ob = parsed.map(lambda x: 
         { 
-            "date": getTimeStamp(),
-            "userid": getValue(x,'userid','-1'),
+            "m_date": getTimeStamp(),
+            "userid": getValue(x,'userId','-1'),
             "fsa": x["clientID"],
             "fsid": x["_fsid"],
             "location_ipv4": x['ip'] ,
