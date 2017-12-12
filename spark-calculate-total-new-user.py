@@ -33,7 +33,8 @@ def getTimeStamp():
     # return str(year)+'-'+str(month)+'-'+str(day)
     # return datetime.datetime
     # return datetime.utcnow().date()
-    return result
+    return int(datetime.now().timestamp())
+    # return result
 
 """
 spark-submit --packages anguenot:pyspark-cassandra:0.6.0 spark-calculate-total-new-user.py
@@ -44,55 +45,45 @@ if __name__ == '__main__':
         exit(-1)
     conf = SparkConf() \
 	.setAppName("spark-calculate-total-new-user") \
-	.set("spark.cassandra.connection.host", "localhost")
+	.set("spark.cassandra.connection.host", "10.88.113.74")
     sc = CassandraSparkContext(conf=conf)
     spark = SparkSession(sc)
     sql = SQLContext(sc)
-    date_temp = getTimeStamp()
-    log = sc.cassandraTable("test","fsa_log_visit").select("date","userid","fsa","fsid").toDF()
-    sql.registerDataFrameAsTable(log, "log")
-    log.show()
-    # print(sql.sql("select * from log where m_date = %s"%date_temp).collect())
-    temp1 = sql.sql("select fsa, userid from log where fsa in"
-        +"(select fsa from log where date=%s and userid !=-1 group by fsa having count(fsa) > 1)"%date_temp)
-    temp1.show()
-    sql.registerDataFrameAsTable(temp1, "temp1")
-    temp2 = sql.sql("select a.fsa, a.userid from log a where a.date=%s and a.fsa not in (select b.fsa from temp1 b )"%date_temp)
-    sql.registerDataFrameAsTable(temp2, "temp2")
-    temp_prev = sql.sql("select fsa, userid from log where date <%s"%date_temp)
-    temp_prev.show()
-    tempsum=temp1.union(temp2)
-    print('tempsum')
-    tempsum.show()
-    result = tempsum.subtract(temp_prev)
-    result.show()
-    # result = sql.sql("select t1.fsa, t1.userid from temp1 t1 union select t2.fsa, t2.userid from temp2 t2")
-    # result.show()
-    # result.show()
-    # print('----result:%s'%result)
-    # print(temp.collect())
-    
-    # print(sql.sql("select fsa, userid from log where fsa not in temp").collect())
-    # while True:
-    #     rdd = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")\
-    #             .filter(lambda x: int(x['m_date']) == date_temp)
-
-    #     if rdd.isEmpty() == False:
-    #         table = rdd.toDF()
-    #         table.show(truncate=False)
-    #         total=table.dropDuplicates(['fsa',"fsid"]).count()
-
-    #         result = sc.parallelize([{
-    #             "bucket":0,
-    #             "m_date": int(date_temp),
-    #             "users": int(total)
-    #         }])
-    #     else:
-    #         result = sc.parallelize([{
-    #             "bucket":0,
-    #             "m_date": int(date_temp),
-    #             "users": 0
-    #         }])
-    #     result.saveToCassandra('test','draft_user_daily_report')
-    #     time.sleep(2)
+    while True:
+        date_temp = getTimeStamp()
+        log = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")
+        if log.isEmpty()==False:
+            log = log.toDF()
+            sql.registerDataFrameAsTable(log, "log")
+            log.show()
+            # print(sql.sql("select * from log where m_date = %s"%date_temp).collect())
+            temp1 = sql.sql("select fsa, userid from log where fsa in"
+                +"(select fsa from log where m_date=%s and userid !=-1 group by fsa having count(fsa) > 1)"%date_temp)
+            temp1.show()
+            sql.registerDataFrameAsTable(temp1, "temp1")
+            temp2 = sql.sql("select a.fsa, a.userid from log a where a.m_date=%s and a.fsa not in (select b.fsa from temp1 b )"%date_temp)
+            sql.registerDataFrameAsTable(temp2, "temp2")
+            temp_prev = sql.sql("select fsa, userid from log where m_date <%s"%date_temp)
+            temp_prev.show()
+            tempsum=temp1.union(temp2)
+            print('tempsum')
+            tempsum.show()
+            result = tempsum.subtract(temp_prev)
+            result.show()
+            total = result.count()
+            # print(result.count())
+            rdd = sc.parallelize([{
+                "bucket":1,
+                "m_date": int(date_temp),
+                "newusers": int(total)
+            }])
+            
+        else:
+            rdd = sc.parallelize([{
+                "bucket":1,
+                "m_date": int(date_temp),
+                "newusers": 0
+            }])
+        rdd.saveToCassandra('test','newuser_daily_report')
+        time.sleep(2)   
     pass

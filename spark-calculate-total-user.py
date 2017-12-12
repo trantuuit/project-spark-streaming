@@ -47,9 +47,10 @@ if __name__ == '__main__':
 	.set("spark.cassandra.connection.host", "10.88.113.74")
     sc = CassandraSparkContext(conf=conf)
     spark = SparkSession(sc)
-    date_temp = getTimeStamp()
+    
 
     while True:
+        date_temp = getTimeStamp()
         rdd = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")\
                 .filter(lambda x: int(x['m_date']) == date_temp)
 
@@ -69,6 +70,6 @@ if __name__ == '__main__':
                 "m_date": int(date_temp),
                 "users": 0
             }])
-        result.saveToCassandra('test','draft_user_daily_report')
+        result.saveToCassandra('test','user_daily_report')
         time.sleep(2)
     pass
