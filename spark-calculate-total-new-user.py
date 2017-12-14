@@ -10,31 +10,22 @@ from uuid import uuid1
 import json
 import time
 from dateutil import tz
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 
-def getTimeStamp():
-    # year=datetime.utcnow().year
+def getGMT():
     year=datetime.now().year
-    # month=datetime.utcnow().month
     month=datetime.now().month
-    # day=datetime.utcnow().day
     day=datetime.now().day
-    # utc_zone = tz.gettz('UTC')
-    # result = datetime.datetime(2016, 11, 6, 4, tzinfo=datetime.timezone.utc)
-    # return datetime.date()
-    # return date(2017,12,8).timetuple()
-    # return date.today()
-    # return datetime(2017,12,8,0,0,0)
-    # datetime.datetime.
-    # return datetime(year,month,day,tzinfo=timezone.utc)
     result = int(time.mktime(time.strptime('%s-%s-%s' %(year,month,day), '%Y-%m-%d'))) - time.timezone
-    # result = int(time.mktime(time.strptime('%s-%s-%s' %(year,month,day), '%Y-%m-%d')))
-    # print(result)
-    # return str(year)+'-'+str(month)+'-'+str(day)
-    # return datetime.datetime
-    # return datetime.utcnow().date()
-    return int(datetime.now().timestamp())
-    # return result
+    return result
+
+def getNextGMT():
+    result = datetime.now() + timedelta(days=1)
+    year = result.year
+    month = result.month
+    day = result.day
+    return int(time.mktime(time.strptime('%s-%s-%s' %(year,month,day), '%Y-%m-%d'))) - time.timezone
+    pass
 
 """
 spark-submit --packages anguenot:pyspark-cassandra:0.6.0 spark-calculate-total-new-user.py
@@ -50,18 +41,20 @@ if __name__ == '__main__':
     spark = SparkSession(sc)
     sql = SQLContext(sc)
     while True:
-        date_temp = getTimeStamp()
+        
         log = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")
+        date_temp = getGMT()
+        date_temp1 = getNextGMT()
         if log.isEmpty()==False:
             log = log.toDF()
             sql.registerDataFrameAsTable(log, "log")
             log.show()
-            # print(sql.sql("select * from log where m_date = %s"%date_temp).collect())
+            
             temp1 = sql.sql("select fsa, userid from log where fsa in"
-                +"(select fsa from log where m_date=%s and userid !=-1 group by fsa having count(fsa) > 1)"%date_temp)
+                +"(select fsa from log where m_date >= %s and m_date < %s and userid !=-1 group by fsa having count(fsa) > 1)"%(date_temp, date_temp1))
             temp1.show()
             sql.registerDataFrameAsTable(temp1, "temp1")
-            temp2 = sql.sql("select a.fsa, a.userid from log a where a.m_date=%s and a.fsa not in (select b.fsa from temp1 b )"%date_temp)
+            temp2 = sql.sql("select a.fsa, a.userid from log a where a.m_date >=%s and a.m_date < %s and a.fsa not in (select b.fsa from temp1 b )"%(date_temp, date_temp1))
             sql.registerDataFrameAsTable(temp2, "temp2")
             temp_prev = sql.sql("select fsa, userid from log where m_date <%s"%date_temp)
             temp_prev.show()
@@ -84,6 +77,6 @@ if __name__ == '__main__':
                 "m_date": int(date_temp),
                 "newusers": 0
             }])
-        rdd.saveToCassandra('test','newuser_daily_report')
+        rdd.saveToCassandra('test','draft_newuser_daily_report')
         time.sleep(2)   
     pass

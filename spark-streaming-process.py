@@ -50,7 +50,8 @@ def getTimeStamp():
     # return datetime.datetime
     # return datetime.utcnow().date()
     # return datetime.now().date()
-    return result
+    return int(datetime.now().timestamp())
+    # return result
 
 if __name__ == '__main__':
 
@@ -65,9 +66,9 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 2)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
-    kvs.pprint()
+    # kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
-    parsed.pprint()
+    # parsed.pprint()
     ob = parsed.map(lambda x: 
         { 
             "m_date": getTimeStamp(),
