@@ -8,7 +8,7 @@ from pyspark.sql import SQLContext, SparkSession
 from pyspark import SparkContext, SparkConf
 from uuid import uuid1
 import json
-import time
+import time 
 from dateutil import tz
 from datetime import datetime, timezone, date, timedelta
 
@@ -28,7 +28,7 @@ def getNextGMT():
     pass
 
 """
-spark-submit --packages anguenot:pyspark-cassandra:0.6.0 spark-calculate-total-user.py
+spark-submit --packages anguenot:pyspark-cassandra:0.7.0 spark-calculate-total-user.py
 """
 if __name__ == '__main__':
     if len(sys.argv) != 1:
@@ -42,26 +42,28 @@ if __name__ == '__main__':
     
 
     while True:
-        date_temp = getGMT()
-        rdd = sc.cassandraTable("test","fsa_log_visit").select("m_date","userid","fsa","fsid")\
-                .filter(lambda x: getGMT() <= int(x['m_date']) < getNextGMT())
+        current_date = getGMT()
+        future_date = getNextGMT()
+        rdd = sc.cassandraTable("web_analytic","fsa_log_visit").select("m_date","userid","fsa","fsid")\
+                .filter(lambda x: current_date <= int(x['m_date']) < future_date)
 
         if rdd.isEmpty() == False:
             table = rdd.toDF()
-            table.show(truncate=False)
+            # table.show(truncate=False)
             total=table.dropDuplicates(['fsa',"fsid"]).count()
 
             result = sc.parallelize([{
                 "bucket":0,
-                "m_date": int(date_temp),
+                "m_date": int(current_date),
                 "users": int(total)
             }])
         else:
             result = sc.parallelize([{
                 "bucket":0,
-                "m_date": int(date_temp),
+                "m_date": int(current_date),
                 "users": 0
             }])
-        result.saveToCassandra('test','draft_user_daily_report')
-        time.sleep(2)
+        result.saveToCassandra('web_analytic','user_daily_report')
+        # break
+        # time.sleep(2)
     pass

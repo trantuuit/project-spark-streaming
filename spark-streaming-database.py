@@ -436,6 +436,27 @@ def create_new_user_daily_report():
     log.info("-------------new_user_daily_report table created successfully--------+") 
     log.info("+----------------------------------------------+")
 
+
+def create_draft_device_report(): 
+    session = getSession(KEYSPACE) 
+    log.info("+-----------Get session successfully-----------+") 
+    session.execute("DROP TABLE IF EXISTS draft_device_report") 
+    # log.info("+----------------------------------------------+") 
+    # # log.info("+-----DROPED TABLE fsa_user successfully-----+")
+    #  # log.info("+----------------------------------------------+") 
+    # log.info("+----------------------------------------------+") 
+    # log.info("+---------------creating table-----------------+") log.info("+----------------------------------------------+") 
+    session.execute(""" 
+        CREATE TABLE IF NOT EXISTS draft_device_report 
+        ( 
+            bucket int, 
+            config_device text,
+            device_count int,
+            PRIMARY KEY(bucket, config_device) ) """) 
+    log.info("+----------------------------------------------+") 
+    log.info("-------------new_user_daily_report table created successfully--------+") 
+    log.info("+----------------------------------------------+")
+
 def getSession(keySpaceName):
     cluster = Cluster(['10.88.113.74'])
     session = cluster.connect()
@@ -475,7 +496,8 @@ if __name__ == "__main__":
     # insert_data_fsa_site(path_input2)
     # create_user_daily()
     # create_draft_user_daily()
-    create_fsa_log_visit()
+    # create_fsa_log_visit()
+    create_draft_device_report()
     # insert_data_fsa_log_visit(path_input3)
     # create_user_daily()
     # create_fsa_log_link_visit_action()
