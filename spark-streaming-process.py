@@ -66,7 +66,7 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 1)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
-    kvs.pprint()
+    # kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
     # parsed.pprint()
     ob = parsed.map(lambda x: 
