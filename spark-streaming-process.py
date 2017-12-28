@@ -66,7 +66,7 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 1)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
-    # kvs.pprint()
+    kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
     # parsed.pprint()
     ob = parsed.map(lambda x: 
@@ -86,7 +86,8 @@ if __name__ == '__main__':
             "config_java": x['javaEnabled'],
             "config_browser": x["config_browser"],
             "config_device": x["config_device"],
-            "location_path": x["location"]
+            "location_path": x["location"],
+            "location_city_name": x["city"]['city']
             
             
             # "dma_code": getValue(x,'dma_code','')

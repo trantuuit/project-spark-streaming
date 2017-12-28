@@ -45,7 +45,7 @@ if __name__ == '__main__':
         current_date = getGMT()
         future_date = getNextGMT()
         rdd = sc.cassandraTable("web_analytic","fsa_log_visit").select("m_date","location_path")\
-                .filter(lambda x: current_date <= int(x['m_date']) < future_date)
+                .filter(lambda x: (1514419200-86400) <= int(x['m_date']) < 1514419200)
         if rdd.isEmpty() == False:
             x = rdd.toDF().groupBy(['location_path']).count()
             # x.show()
@@ -53,11 +53,11 @@ if __name__ == '__main__':
             for row in x.collect():
                 x = {
                     'location_path': row['location_path'], 
-                    'm_date': int(current_date), 
+                    'm_date': int(1514419200-86400), 
                     'count':row['count'],
                     'bucket':5}
                 array.append(x)     
             result = sc.parallelize(array)
             result.saveToCassandra('web_analytic','page_view_report')
-            # break
+            break
             pass

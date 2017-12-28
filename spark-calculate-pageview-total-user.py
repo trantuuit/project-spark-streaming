@@ -79,7 +79,10 @@ if __name__ == '__main__':
                         }
                     array_pageview.append(x)     
                 result_pageview = sc.parallelize(array_pageview)
+                result_pageview.saveToCassandra('web_analytic','page_view_report')
+                
+                result_total_user.saveToCassandra('web_analytic','user_daily_report')
 
             result_newuser.saveToCassandra('web_analytic','newuser_daily_report')
-            result_pageview.saveToCassandra('web_analytic','page_view_report')
-            result_total_user.saveToCassandra('web_analytic','user_daily_report')
+            
+            
