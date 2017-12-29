@@ -42,13 +42,13 @@ if __name__ == '__main__':
     spark = SparkSession(sc)
     sql = SQLContext(sc)
 
-    i = 1511740800
-    while i <= 1514505600:
-    # while True:
-        date_temp = i
-        i = i + 86400
-        # current_date = getGMT()
-        # future_date = getNextGMT()
+    # i = 1511740800
+    # while i <= 1514505600:
+    while True:
+        # date_temp = i
+        # i = i + 86400
+        current_date = getGMT()
+        future_date = getNextGMT()
         rdd = sc.cassandraTable("web_analytic","fsa_log_visit")\
                 .select(
                     "config_browser",
@@ -63,8 +63,9 @@ if __name__ == '__main__':
                     "config_resolution",
                     "location_os"
                     )\
-                .filter(lambda x: date_temp <= int(x['m_date']) < i)
-                # .filter(lambda x: current_date <= int(x['m_date']) < future_date)
+                    .filter(lambda x: current_date <= int(x['m_date']) < future_date)
+                # .filter(lambda x: date_temp <= int(x['m_date']) < i)
+                
         # 1514332800
         if rdd.isEmpty() == False:
             table_drop = rdd.toDF().dropDuplicates(['fsa'])
@@ -84,8 +85,8 @@ if __name__ == '__main__':
                 x = {
                     'config_browser': row['config_browser'], 
                     'browser_count': row['count'],
-                    # 'm_date': current_date,
-                    'm_date': date_temp,
+                    'm_date': current_date,
+                    # 'm_date': date_temp,
                     'bucket': 4
                     }
                 array_config_browser.append(x)
@@ -97,8 +98,8 @@ if __name__ == '__main__':
                 x = {
                     'config_device': row['config_device'], 
                     'device_count': row['count'],
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'bucket': 3
                 }
                 array_config_device.append(x)
@@ -110,8 +111,8 @@ if __name__ == '__main__':
                 x = {
                     'browser_language': row['location_browser_lan'], 
                     'count': row['count'],
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'bucket':6
                     }
                 array_browser_language.append(x)
@@ -123,8 +124,8 @@ if __name__ == '__main__':
                 x = {'location_country_name': row['location_country_name'], 
                     'location_country_code': row['location_country_code'], 
                     'location_count':row['count'],
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'bucket':2
                     }
                 array_country.append(x)
@@ -136,8 +137,8 @@ if __name__ == '__main__':
                 x = {
                     'city_name': row['location_city_name'],
                     'bucket': 7,
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'count': row['count']
                 }
 
@@ -150,8 +151,8 @@ if __name__ == '__main__':
             for row in result_location_os.collect():
                 x = {
                     'bucket': 8,
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'os_name': row['location_os'],
                     'count': row['count']
                 }
@@ -164,8 +165,8 @@ if __name__ == '__main__':
             for row in result_config_resolution.collect():
                 x = {
                     'bucket': 9,
-                    'm_date': date_temp,
-                    # 'm_date': current_date,
+                    # 'm_date': date_temp,
+                    'm_date': current_date,
                     'screen': row['config_resolution'],
                     'count': row['count']
                 }
