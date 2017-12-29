@@ -39,32 +39,37 @@ if __name__ == '__main__':
 	.set("spark.cassandra.connection.host", "10.88.113.74")
     sc = CassandraSparkContext(conf=conf)
     spark = SparkSession(sc)
-
-    while True:
+    i = 1511740800
+    while i <= 1514505600:
+    # while True:
         current_date = getGMT()
         future_date = getNextGMT()
+        date_temp = i
+        i = i + 86400
         raw = sc.cassandraTable("web_analytic","fsa_log_visit").select("m_date","userid","fsa","fsid","location_path")
         if raw.isEmpty() == False:
             df = raw.toDF()
-            current_day = df.filter( df.m_date >= current_date ).filter(df.m_date < future_date).dropDuplicates(['fsa',"fsid"]).select('fsa','fsid')
-            previous_day =  df.filter(df.m_date < current_date).select('fsa','fsid')
+            # current_day = df.filter( df.m_date >= current_date ).filter(df.m_date < future_date).dropDuplicates(['fsa',"fsid"]).select('fsa','fsid')
+            # previous_day =  df.filter(df.m_date < current_date).select('fsa','fsid')
+            current_day = df.filter( df.m_date >= date_temp ).filter(df.m_date < i).dropDuplicates(['fsa',"fsid"]).select('fsa','fsid')
+            previous_day =  df.filter(df.m_date < date_temp).select('fsa','fsid')
             result_new_user = current_day.subtract(previous_day)
             total_newuser = result_new_user.count()
             result_newuser = sc.parallelize([{
                 "bucket":1,
-                "m_date": int(current_date),
+                "m_date": int(date_temp),
                 "newusers": int(total_newuser)
             }])
             
 
-            rdd = raw.filter(lambda x: current_date <= int(x['m_date']) < future_date)
+            rdd = raw.filter(lambda x: date_temp <= int(x['m_date']) < i)
             if rdd.isEmpty() == False:
                 table = rdd.toDF()
                 total_user=table.dropDuplicates(['fsa',"fsid"]).count()
 
                 result_total_user = sc.parallelize([{
                     "bucket":0,
-                    "m_date": int(current_date),
+                    "m_date": int(date_temp),
                     "users": int(total_user)
                 }])
 
@@ -73,7 +78,7 @@ if __name__ == '__main__':
                 for row in pageviews.collect():
                     x = {
                         'location_path': row['location_path'], 
-                        'm_date': int(current_date), 
+                        'm_date': int(date_temp), 
                         'count':row['count'],
                         'bucket':5
                         }

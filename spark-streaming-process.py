@@ -15,6 +15,7 @@ import time
 # import datetime
 from dateutil import tz
 from datetime import datetime, timezone, date
+from operator import add
 """
 spark-submit --packages anguenot:pyspark-cassandra:0.7.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0 spark-streaming-process.py 10.88.113.111:9092 log 
 """
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     ssc = StreamingContext(sc, 1)
     brokers, topic = sys.argv[1:]
     kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
-    kvs.pprint()
+    # kvs.pprint()
     parsed = kvs.map(lambda x: json.loads(x[1]))
     # parsed.pprint()
     ob = parsed.map(lambda x: 
@@ -87,11 +88,15 @@ if __name__ == '__main__':
             "config_browser": x["config_browser"],
             "config_device": x["config_device"],
             "location_path": x["location"],
-            "location_city_name": x["city"]['city']
-            
+            "location_city_name": x["city"]['city'],
+            "location_os": x['location_os']
             
             # "dma_code": getValue(x,'dma_code','')
         })
+    
+    # joined = ob.joinWithCassandraTable('web_analytic', 'fsa_log_visit').on("fsa").select("fsa","m_date")
+    # joined.reduceByKey(add).pprint()
+    # joined.pprint()
     ob.pprint()
     ob.saveToCassandra("web_analytic","fsa_log_visit")
     ssc.start()

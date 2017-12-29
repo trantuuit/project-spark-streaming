@@ -42,9 +42,13 @@ if __name__ == '__main__':
     spark = SparkSession(sc)
     sql = SQLContext(sc)
 
-    while True:
-        current_date = getGMT()
-        future_date = getNextGMT()
+    i = 1511740800
+    while i <= 1514505600:
+    # while True:
+        date_temp = i
+        i = i + 86400
+        # current_date = getGMT()
+        # future_date = getNextGMT()
         rdd = sc.cassandraTable("web_analytic","fsa_log_visit")\
                 .select(
                     "config_browser",
@@ -55,9 +59,12 @@ if __name__ == '__main__':
                     "location_country_code",
                     "m_date",
                     "location_path",
-                    "location_city_name"
+                    "location_city_name",
+                    "config_resolution",
+                    "location_os"
                     )\
-                .filter(lambda x: current_date <= int(x['m_date']) < future_date)
+                .filter(lambda x: date_temp <= int(x['m_date']) < i)
+                # .filter(lambda x: current_date <= int(x['m_date']) < future_date)
         # 1514332800
         if rdd.isEmpty() == False:
             table_drop = rdd.toDF().dropDuplicates(['fsa'])
@@ -69,13 +76,16 @@ if __name__ == '__main__':
             result_country = table_drop.groupBy(['location_country_name','location_country_code']).count()
             result_location_path = table_drop.groupBy(['location_path']).count()
             result_location_city = table_drop.groupBy(['location_city_name']).count()
+            result_location_os = table_drop.groupBy(['location_os']).count()
+            result_config_resolution = table_drop.groupBy(['config_resolution']).count()
 #-------------------------------------------
             array_config_browser = []
             for row in result_config_browser.collect():
                 x = {
                     'config_browser': row['config_browser'], 
                     'browser_count': row['count'],
-                    'm_date': current_date,
+                    # 'm_date': current_date,
+                    'm_date': date_temp,
                     'bucket': 4
                     }
                 array_config_browser.append(x)
@@ -87,7 +97,8 @@ if __name__ == '__main__':
                 x = {
                     'config_device': row['config_device'], 
                     'device_count': row['count'],
-                    'm_date': current_date,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
                     'bucket': 3
                 }
                 array_config_device.append(x)
@@ -99,7 +110,8 @@ if __name__ == '__main__':
                 x = {
                     'browser_language': row['location_browser_lan'], 
                     'count': row['count'],
-                    'm_date': current_date,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
                     'bucket':6
                     }
                 array_browser_language.append(x)
@@ -111,7 +123,8 @@ if __name__ == '__main__':
                 x = {'location_country_name': row['location_country_name'], 
                     'location_country_code': row['location_country_code'], 
                     'location_count':row['count'],
-                    'm_date': current_date,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
                     'bucket':2
                     }
                 array_country.append(x)
@@ -123,16 +136,47 @@ if __name__ == '__main__':
                 x = {
                     'city_name': row['location_city_name'],
                     'bucket': 7,
-                    'm_date': current_date,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
                     'count': row['count']
                 }
 
                 array_city.append(x)
             result_location_city = sc.parallelize(array_city)
-            # print(result_location_city.collect())
+
+#---------------------------------------
+
+            array_location_os = []
+            for row in result_location_os.collect():
+                x = {
+                    'bucket': 8,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
+                    'os_name': row['location_os'],
+                    'count': row['count']
+                }
+                array_location_os.append(x)
+            result_location_os = sc.parallelize(array_location_os)
+
+#----------------------------------------
+
+            array_config_resolution = []
+            for row in result_config_resolution.collect():
+                x = {
+                    'bucket': 9,
+                    'm_date': date_temp,
+                    # 'm_date': current_date,
+                    'screen': row['config_resolution'],
+                    'count': row['count']
+                }
+                array_config_resolution.append(x)
+            result_config_resolution = sc.parallelize(array_config_resolution)
+
+            result_config_resolution.saveToCassandra('web_analytic','system_screen_report')
+            result_location_os.saveToCassandra('web_analytic','os_report')
             result_location_city.saveToCassandra('web_analytic','city_report')
             result_country.saveToCassandra('web_analytic','location_report')
             result_location_browser.saveToCassandra('web_analytic','browser_language_report')
             result_config_device.saveToCassandra('web_analytic','device_report')
             result_config_browser.saveToCassandra('web_analytic','browser_report')
-            break
+            #break
