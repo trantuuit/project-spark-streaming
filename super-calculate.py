@@ -9,7 +9,7 @@ from pyspark import SparkContext, SparkConf
 from uuid import uuid1
 import json
 import time
-from dateutil import tz
+# from dateutil import tz
 from datetime import datetime, timezone, date, timedelta
 
 """
@@ -42,8 +42,8 @@ if __name__ == '__main__':
     spark = SparkSession(sc)
     sql = SQLContext(sc)
 
-    # i = 1511740800
-    # while i <= 1514505600:
+    # i = 1514505600
+    # while i <= 1515110400:
     while True:
         # date_temp = i
         # i = i + 86400
@@ -64,7 +64,11 @@ if __name__ == '__main__':
                     "location_os"
                     )\
                     .filter(lambda x: current_date <= int(x['m_date']) < future_date)
-                # .filter(lambda x: date_temp <= int(x['m_date']) < i)
+                    # .filter(lambda x: date_temp <= int(x['m_date']) < i)
+                    
+                    
+                    
+                
                 
         # 1514332800
         if rdd.isEmpty() == False:

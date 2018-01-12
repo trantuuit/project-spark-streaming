@@ -17,7 +17,7 @@ from dateutil import tz
 from datetime import datetime, timezone, date
 from operator import add
 """
-spark-submit --packages anguenot:pyspark-cassandra:0.7.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0 spark-streaming-process.py 10.88.113.111:9092 log 
+spark-submit --packages anguenot:pyspark-cassandra:0.7.0,\org.apache.spark:spark-streaming-kafka-0-8_2.11:2.2.0 spark-streaming-process.py 10.88.113.22:9092 log 
 """
 
 
@@ -99,6 +99,7 @@ if __name__ == '__main__':
     # joined.pprint()
     ob.pprint()
     ob.saveToCassandra("web_analytic","fsa_log_visit")
+    ob.saveToCassandra("web_analytic","fsa_log_past_twodate")
     ssc.start()
     ssc.awaitTermination()
     pass

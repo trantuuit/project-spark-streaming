@@ -39,8 +39,8 @@ if __name__ == '__main__':
 	.set("spark.cassandra.connection.host", "10.88.113.74")
     sc = CassandraSparkContext(conf=conf)
     spark = SparkSession(sc)
-    # i = 1511740800
-    # while i <= 1514505600:
+    # i = 1514505600
+    # while i <= 1514764800:
     while True:
         current_date = getGMT()
         future_date = getNextGMT()
@@ -58,11 +58,13 @@ if __name__ == '__main__':
             result_newuser = sc.parallelize([{
                 "bucket":1,
                 "m_date": int(current_date),
+                # "m_date": int(date_temp),
                 "newusers": int(total_newuser)
             }])
             
 
             rdd = raw.filter(lambda x: current_date <= int(x['m_date']) < future_date)
+            # rdd = raw.filter(lambda x: date_temp <= int(x['m_date']) < i)
             if rdd.isEmpty() == False:
                 table = rdd.toDF()
                 total_user=table.dropDuplicates(['fsa',"fsid"]).count()
@@ -70,6 +72,7 @@ if __name__ == '__main__':
                 result_total_user = sc.parallelize([{
                     "bucket":0,
                     "m_date": int(current_date),
+                    # "m_date": int(date_temp),
                     "users": int(total_user)
                 }])
 
@@ -79,6 +82,7 @@ if __name__ == '__main__':
                     x = {
                         'location_path': row['location_path'], 
                         'm_date': int(current_date), 
+                        # "m_date": int(date_temp),
                         'count':row['count'],
                         'bucket':5
                         }
